@@ -16,6 +16,9 @@ export interface Post {
   published_at: number
   updated_at: number
   view_count: number
+  price_cents: number
+  currency: string
+  unlock_url: string | null
 }
 
 export interface PostWithTags extends Omit<Post, 'tags'> {

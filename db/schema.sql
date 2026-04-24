@@ -13,6 +13,9 @@ CREATE TABLE posts (
   is_pinned INTEGER DEFAULT 0, -- 是否置顶
   is_hidden INTEGER DEFAULT 0, -- 是否隐藏（unlisted）
   cover_image TEXT, -- 封面图 URL
+  price_cents INTEGER DEFAULT 0, -- 价格（分），0 表示免费
+  currency TEXT DEFAULT 'CNY', -- 货币代码
+  unlock_url TEXT, -- 付款后展示的交付链接
   deleted_at INTEGER, -- 软删除时间戳，NULL 表示未删除
   published_at INTEGER DEFAULT (strftime('%s', 'now')),
   updated_at INTEGER DEFAULT (strftime('%s', 'now')),
@@ -219,3 +222,21 @@ INSERT INTO categories (name, slug) VALUES
   ('未分类', 'uncategorized'),
   ('AI工具', 'ai-tools'),
   ('AI', 'ai');
+
+-- 订单表（付费文章购买记录）
+CREATE TABLE IF NOT EXISTS orders (
+  id TEXT PRIMARY KEY,
+  stripe_session_id TEXT UNIQUE,
+  article_id TEXT NOT NULL,
+  buyer_email TEXT NOT NULL,
+  amount_cents INTEGER NOT NULL,
+  currency TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  agreed_refund_policy INTEGER DEFAULT 0,
+  created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+  paid_at INTEGER
+);
+
+CREATE INDEX IF NOT EXISTS idx_orders_email ON orders(buyer_email);
+CREATE INDEX IF NOT EXISTS idx_orders_article ON orders(article_id);
+CREATE INDEX IF NOT EXISTS idx_orders_stripe_session ON orders(stripe_session_id);

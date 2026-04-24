@@ -39,11 +39,11 @@ export async function getPosts(
   const { results } = await db
     .prepare(
       `SELECT id, slug, title, description, category, tags, status, password, is_pinned, is_hidden, published_at, view_count
-       , deleted_at
-       FROM posts
-       ${where}
-       ORDER BY is_pinned DESC, published_at DESC
-       LIMIT ? OFFSET ?`,
+      , deleted_at, price_cents, currency, unlock_url
+      FROM posts
+      ${where}
+      ORDER BY is_pinned DESC, published_at DESC
+      LIMIT ? OFFSET ?`,
     )
     .bind(limit, offset)
     .all<Post>()
@@ -131,6 +131,9 @@ export async function createPost(
     password?: string | null
     is_hidden?: number
     cover_image?: string | null
+    price_cents?: number
+    currency?: string
+    unlock_url?: string | null
   },
 ): Promise<number> {
   await ensureSchema(db)
@@ -138,8 +141,8 @@ export async function createPost(
 
   const result = await db
     .prepare(
-      `INSERT INTO posts (slug, title, content, html, description, category, tags, status, password, is_hidden, cover_image)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO posts (slug, title, content, html, description, category, tags, status, password, is_hidden, cover_image, price_cents, currency, unlock_url)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .bind(
       data.slug,
@@ -153,14 +156,17 @@ export async function createPost(
       data.password ?? null,
       data.is_hidden ?? 0,
       data.cover_image ?? null,
+      data.price_cents ?? 0,
+      data.currency ?? 'CNY',
+      data.unlock_url ?? null,
     )
     .run()
 
   await db
     .prepare(
       `UPDATE categories
-       SET post_count = post_count + 1
-       WHERE name = ?`,
+      SET post_count = post_count + 1
+      WHERE name = ?`,
     )
     .bind(category)
     .run()
@@ -185,6 +191,9 @@ export async function updatePostBySlug(
     is_pinned: number
     is_hidden: number
     cover_image: string | null
+    price_cents: number
+    currency: string
+    unlock_url: string | null
   }>,
 ): Promise<void> {
   await ensureSchema(db)
@@ -218,6 +227,9 @@ export async function updatePost(
     is_pinned: number
     is_hidden: number
     cover_image: string | null
+    price_cents: number
+    currency: string
+    unlock_url: string | null
   }>,
 ): Promise<void> {
   await ensureSchema(db)
@@ -286,6 +298,18 @@ export async function updatePost(
   if (data.cover_image !== undefined) {
     updates.push('cover_image = ?')
     values.push(data.cover_image)
+  }
+  if (data.price_cents !== undefined) {
+    updates.push('price_cents = ?')
+    values.push(data.price_cents)
+  }
+  if (data.currency !== undefined) {
+    updates.push('currency = ?')
+    values.push(data.currency)
+  }
+  if (data.unlock_url !== undefined) {
+    updates.push('unlock_url = ?')
+    values.push(data.unlock_url)
   }
 
   if (updates.length === 0) return
@@ -381,12 +405,12 @@ export async function getPostsCountByCategory(db: Database, category: string): P
   const result = await db
     .prepare(
       `SELECT COUNT(*) as count
-       FROM posts
-       WHERE category = ?
-         AND status = 'published'
-         AND password IS NULL
-         AND is_hidden = 0
-         AND deleted_at IS NULL`,
+      FROM posts
+      WHERE category = ?
+      AND status = 'published'
+      AND password IS NULL
+      AND is_hidden = 0
+      AND deleted_at IS NULL`,
     )
     .bind(category)
     .first<CountRow>()
@@ -402,15 +426,15 @@ export async function getPostsByCategory(
 ): Promise<PostWithTags[]> {
   const { results } = await db
     .prepare(
-      `SELECT id, slug, title, description, category, tags, status, password, is_pinned, is_hidden, deleted_at, published_at, view_count
-       FROM posts
-       WHERE category = ?
-         AND status = 'published'
-         AND password IS NULL
-         AND is_hidden = 0
-         AND deleted_at IS NULL
-       ORDER BY is_pinned DESC, published_at DESC
-       LIMIT ? OFFSET ?`,
+      `SELECT id, slug, title, description, category, tags, status, password, is_pinned, is_hidden, deleted_at, price_cents, currency, unlock_url, published_at, view_count
+      FROM posts
+      WHERE category = ?
+      AND status = 'published'
+      AND password IS NULL
+      AND is_hidden = 0
+      AND deleted_at IS NULL
+      ORDER BY is_pinned DESC, published_at DESC
+      LIMIT ? OFFSET ?`,
     )
     .bind(category, limit, offset)
     .all<Post>()
