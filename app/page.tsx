@@ -48,6 +48,10 @@ export default async function Home({
     console.error('Homepage: failed to fetch posts', e)
   }
 
+  // Shop mode: only show paid articles on homepage
+  posts = posts.filter(p => p.price_cents > 0)
+  totalCount = posts.length
+
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE))
   const categorySlugMap: Record<string, string> = Object.fromEntries(
     categories.map((cat) => [cat.name, cat.slug])
