@@ -37,6 +37,9 @@ export default async function EditorPage({
     tags?: string[]
     description?: string | null
     cover_image?: string | null
+  price_cents?: number
+  currency?: string
+  unlock_url?: string | null
   } | undefined
 
   if (edit) {

@@ -102,6 +102,9 @@ interface NovelEditorProps {
     tags?: string[]
     description?: string | null
     cover_image?: string | null
+  price_cents?: number
+  currency?: string
+  unlock_url?: string | null
   }
 }
 
@@ -112,6 +115,9 @@ type DraftMetaState = {
   tags: string[]
   description: string
   coverImage: string
+  priceCents: number
+  currency: string
+  unlockUrl: string
 }
 
 type MetaGenerationTarget = 'summary' | 'tags' | 'slug' | 'cover'
@@ -138,6 +144,9 @@ export function NovelEditor({ initialData }: NovelEditorProps = {}) {
   const [tags, setTags] = useState<string[]>(initialData?.tags || [])
   const [description, setDescription] = useState(initialData?.description || '')
   const [coverImage, setCoverImage] = useState(initialData?.cover_image || '')
+  const [priceCents, setPriceCents] = useState(initialData?.price_cents || 0)
+  const [currency, setCurrency] = useState(initialData?.currency || 'CNY')
+  const [unlockUrl, setUnlockUrl] = useState(initialData?.unlock_url || '')
   const [slug, setSlug] = useState(initialData?.slug || '')
 
   // ── UI state ──
@@ -172,6 +181,9 @@ export function NovelEditor({ initialData }: NovelEditorProps = {}) {
     tags: initialData?.tags || [],
     description: initialData?.description || '',
     coverImage: initialData?.cover_image || '',
+    priceCents: initialData?.price_cents || 0,
+    currency: initialData?.currency || 'CNY',
+    unlockUrl: initialData?.unlock_url || '',
   })
 
   // ── Init ──
@@ -207,8 +219,11 @@ export function NovelEditor({ initialData }: NovelEditorProps = {}) {
       tags,
       description,
       coverImage,
+      priceCents,
+      currency,
+      unlockUrl,
     }
-  }, [editSlug, slug, category, tags, description, coverImage])
+  }, [editSlug, slug, category, tags, description, coverImage, priceCents, currency, unlockUrl])
 
   // Relative time ticker
   useEffect(() => {
@@ -320,6 +335,9 @@ export function NovelEditor({ initialData }: NovelEditorProps = {}) {
     category: string
     tags: string[]
     coverImage: string
+  priceCents: number
+  currency: string
+  unlockUrl: string
   }) => {
     return JSON.stringify({
       currentSlug: payload.currentSlug,
@@ -330,6 +348,9 @@ export function NovelEditor({ initialData }: NovelEditorProps = {}) {
       category: payload.category,
       tags: payload.tags,
       coverImage: payload.coverImage,
+      priceCents: payload.priceCents,
+      currency: payload.currency,
+      unlockUrl: payload.unlockUrl,
     })
   }, [])
 
@@ -405,6 +426,9 @@ export function NovelEditor({ initialData }: NovelEditorProps = {}) {
       category,
       tags,
       coverImage,
+      priceCents,
+      currency,
+      unlockUrl,
     })
 
     if (snapshot === lastAutosaveSnapshotRef.current) {
@@ -436,6 +460,9 @@ export function NovelEditor({ initialData }: NovelEditorProps = {}) {
             category,
             tags,
             cover_image: coverImage,
+      price_cents: priceCents,
+      currency: currency,
+      unlock_url: unlockUrl,
           }),
           signal: controller.signal,
         })
@@ -464,6 +491,9 @@ export function NovelEditor({ initialData }: NovelEditorProps = {}) {
             tags,
             description: normalizedDescription,
             cover_image: coverImage,
+      price_cents: priceCents,
+      currency: currency,
+      unlock_url: unlockUrl,
           }),
           signal: controller.signal,
         })
@@ -776,7 +806,7 @@ export function NovelEditor({ initialData }: NovelEditorProps = {}) {
           slug: normalizedSlug || (isEdit ? editSlug : undefined),
           title: normalizedTitle, content, html, category,
           ...statusFields,
-          tags, description: normalizedDescription, cover_image: coverImage || null,
+          tags, description: normalizedDescription, cover_image: coverImage || null, price_cents: priceCents, currency: currency, unlock_url: unlockUrl || null,
         }),
       })
       const result = (await response.json()) as {
@@ -798,6 +828,9 @@ export function NovelEditor({ initialData }: NovelEditorProps = {}) {
         category,
         tags,
         coverImage,
+      priceCents,
+      currency,
+      unlockUrl,
       })
       lastAutosaveSnapshotRef.current = snapshot
 
@@ -1129,6 +1162,9 @@ export function NovelEditor({ initialData }: NovelEditorProps = {}) {
                           category: initialData.category || '未分类',
                           tags: initialData.tags || [],
                           coverImage: initialData.cover_image || '',
+        priceCents: initialData.price_cents || 0,
+        currency: initialData.currency || 'CNY',
+        unlockUrl: initialData.unlock_url || '',
                         })
                       } else {
                         lastAutosaveSnapshotRef.current = null

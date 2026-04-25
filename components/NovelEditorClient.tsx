@@ -26,6 +26,9 @@ export function NovelEditorClient(props: {
     tags?: string[]
     description?: string | null
     cover_image?: string | null
+  price_cents?: number
+  currency?: string
+  unlock_url?: string | null
   }
   skipDraftRestore?: boolean
 }) {
