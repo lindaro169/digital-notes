@@ -9,6 +9,7 @@ import { FrontPostAdminBoundary } from '@/components/FrontPostAdminBoundary'
 import { PasswordPrompt } from '@/components/PasswordPrompt'
 import { DownloadMarkdown } from '@/components/DownloadMarkdown'
 import { TwitterEmbedsEnhancer } from '@/components/TwitterEmbedsEnhancer'
+import { PaywallBlock } from '@/components/PaywallBlock'
 import { getSiteHeaderData } from '@/lib/site'
 import { getRelatedPosts } from '@/lib/related-content'
 import { getPublicContentCacheNamespace } from '@/lib/cache'
@@ -80,10 +81,10 @@ export default async function PostPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>
-  searchParams: Promise<{ pwd?: string }>
+  searchParams: Promise<{ pwd?: string; token?: string }>
 }) {
   const { slug } = await params
-  const { pwd } = await searchParams
+  const { pwd, token } = await searchParams
 
   let env: Awaited<ReturnType<typeof getAppCloudflareEnv>> | undefined
   try {
@@ -168,6 +169,18 @@ export default async function PostPage({
         </div>
       )
     }
+  }
+
+  // 验证解锁令牌（如果 URL 带 token 参数）
+  let isUnlocked = false
+  if (token && post.price_cents > 0) {
+    try {
+      const order = await db
+        .prepare('SELECT status FROM orders WHERE id = ? AND article_id = ?')
+        .bind(token, String(post.id))
+        .first<{ status: string }>()
+      isUnlocked = order?.status === 'paid'
+    } catch {}
   }
 
   // 异步增加阅读计数，不阻塞渲染
@@ -286,6 +299,29 @@ export default async function PostPage({
               dangerouslySetInnerHTML={{ __html: post.html }}
             />
             <TwitterEmbedsEnhancer containerId={contentContainerId} html={post.html} />
+
+          {post.price_cents > 0 && !isUnlocked && (
+            <PaywallBlock
+              priceCents={post.price_cents}
+              currency={post.currency}
+              articleSlug={post.slug}
+            />
+          )}
+          {post.price_cents > 0 && isUnlocked && post.unlock_url && (
+            <div className="mt-10 rounded-2xl border border-emerald-200 bg-emerald-50/50 p-6">
+              <h3 className="text-sm font-semibold text-emerald-800 mb-3">已购买 · 交付链接</h3>
+              <a
+                href={post.unlock_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                访问资源
+              </a>
+              <p className="mt-2 text-xs text-emerald-600/70">此链接已发送到您的邮箱，请妥善保存</p>
+            </div>
+          )}
 
             {related.results.length > 0 && (
               <section className="mt-14 sm:mt-16 border-t border-[var(--editor-line)] pt-8 sm:pt-10">
