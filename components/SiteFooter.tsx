@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useState, useRef, useEffect } from 'react'
 import { refreshAdminSession, useAdminSession } from '@/lib/admin-session-client'
+import { CookiePreferenceReset } from '@/components/CookieBanner'
 
 export function SiteFooter() {
   const [open, setOpen] = useState(false)
